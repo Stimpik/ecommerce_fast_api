@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.pyc
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Django specific
+*.log
+*.pot
+*.pyc
+db.sqlite3
+#media/
+#staticfiles/
+#static/
+
+# Migrations (опционально, если хотите игнорировать)
+# */migrations/
+
+# IDE / editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables / secrets
+.env.local
+.env.*
+!.env.example
+
+# pytest / coverage
+.coverage
+htmlcov/
+*.cover
+*.log
+*.pot
+*.mo
+.pytest_cache/
+.tox/
+.cache/
+
+# MyPy / Ruff / pylint / etc.
+.mypy_cache/
+.ruff_cache/
+pylint-report.txt
+pylint-score.txt
