@@ -13,6 +13,7 @@ app = FastAPI(
 # Подключаем маршруты категорий и товаров
 app.include_router(categories.router)
 app.include_router(products.router)
+# app.include_router(test.notes_router)
 
 
 # Корневой эндпоинт для проверки
