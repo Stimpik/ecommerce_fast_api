@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
@@ -8,7 +7,6 @@ from app.models.categories import Category as CategoryModel
 from app.models.users import User as UserModel
 from app.schemas import Product as ProductSchema, ProductCreate
 from app.auth import get_current_seller
-from app.db_depends import get_db
 from app.db_depends import get_async_db
 
 # Создаём маршрутизатор для товаров

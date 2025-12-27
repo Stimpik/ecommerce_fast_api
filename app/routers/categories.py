@@ -3,12 +3,10 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.categories import Category as CategoryModel
+from app.models.users import User as UserModel
 from app.schemas import Category as CategorySchema, CategoryCreate
 from app.db_depends import get_async_db
-
-
-
-
+from app.auth import is_admin, get_current_user
 
 # Создаём маршрутизатор с префиксом и тегом
 router = APIRouter(
@@ -22,13 +20,15 @@ async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех активных категорий.
     """
-    result = await db.scalars(select(CategoryModel).where(CategoryModel.is_active==True))
+    result = await db.scalars(select(CategoryModel).where(CategoryModel.is_active == True))
     categories = result.all()
     return categories
 
 
 @router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
-async def create_category(category: CategoryCreate, db: AsyncSession = Depends(get_async_db)):
+async def create_category(category: CategoryCreate,
+                          db: AsyncSession = Depends(get_async_db),
+                          admin: UserModel = Depends(is_admin)):
     """
     Создаёт новую категорию.
     """
@@ -49,7 +49,10 @@ async def create_category(category: CategoryCreate, db: AsyncSession = Depends(g
 
 
 @router.put("/{category_id}", response_model=CategorySchema)
-async def update_category(category_id: int, category: CategoryCreate, db: AsyncSession = Depends(get_async_db)):
+async def update_category(category_id: int,
+                          category: CategoryCreate,
+                          db: AsyncSession = Depends(get_async_db),
+                          admin: UserModel = Depends(is_admin)):
     """
     Обновляет категорию по её ID.
     """
@@ -84,7 +87,9 @@ async def update_category(category_id: int, category: CategoryCreate, db: AsyncS
 
 
 @router.delete("/{category_id}", response_model=CategorySchema)
-async def delete_category(category_id: int, db: AsyncSession = Depends(get_async_db)):
+async def delete_category(category_id: int,
+                          db: AsyncSession = Depends(get_async_db),
+                          admin: UserModel = Depends(is_admin)):
     """
     Выполняет мягкое удаление категории по её ID, устанавливая is_active = False.
     """
