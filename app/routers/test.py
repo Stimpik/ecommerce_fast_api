@@ -1,1 +1,1 @@
-print(*sorted(map(str.strip, open(0)))[1:], sep='\n')
+print(round(float(input()) * 1000))
