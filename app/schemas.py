@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from decimal import Decimal
-from typing import Optional
-
+from datetime import datetime
 
 class CategoryCreate(BaseModel):
     """
@@ -74,3 +73,14 @@ class User(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+class ReviewSchema(BaseModel):
+    id: int
+    user_id: int
+    product_id: int
+    comment: str | None
+    comment_date: datetime
+    grade: int
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
