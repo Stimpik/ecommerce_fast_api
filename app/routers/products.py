@@ -5,7 +5,8 @@ from sqlalchemy import select, update
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
 from app.models.users import User as UserModel
-from app.schemas import Product as ProductSchema, ProductCreate
+from app.models.reviews import Review as ReviewModel
+from app.schemas import Product as ProductSchema, ProductCreate, Review
 from app.auth import get_current_seller
 from app.db_depends import get_async_db
 
@@ -62,9 +63,9 @@ async def get_products_by_category(category_id: int, db: AsyncSession = Depends(
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
 async def create_product(
-    product: ProductCreate,
-    db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller)
+        product: ProductCreate,
+        db: AsyncSession = Depends(get_async_db),
+        current_user: UserModel = Depends(get_current_seller)
 ):
     """
     Создаёт новый товар, привязанный к текущему продавцу (только для 'seller').
@@ -80,12 +81,13 @@ async def create_product(
     await db.refresh(db_product)  # Для получения id и is_active из базы
     return db_product
 
+
 @router.put("/{product_id}", response_model=ProductSchema)
 async def update_product(
-    product_id: int,
-    product: ProductCreate,
-    db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller)
+        product_id: int,
+        product: ProductCreate,
+        db: AsyncSession = Depends(get_async_db),
+        current_user: UserModel = Depends(get_current_seller)
 ):
     """
     Обновляет товар, если он принадлежит текущему продавцу (только для 'seller').
@@ -108,11 +110,12 @@ async def update_product(
     await db.refresh(db_product)  # Для консистентности данных
     return db_product
 
+
 @router.delete("/{product_id}", response_model=ProductSchema)
 async def delete_product(
-    product_id: int,
-    db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller)
+        product_id: int,
+        db: AsyncSession = Depends(get_async_db),
+        current_user: UserModel = Depends(get_current_seller)
 ):
     """
     Выполняет мягкое удаление товара, если он принадлежит текущему продавцу (только для 'seller').
@@ -131,3 +134,19 @@ async def delete_product(
     await db.commit()
     await db.refresh(product)  # Для возврата is_active = False
     return product
+
+
+@router.get("/{product_id}/reviews/", response_model=list[Review])
+async def product_review_list(product_id: int, db: AsyncSession = Depends(get_async_db)):
+    """
+    Возвращает список активных отзывов для указанного активного товара.
+
+    Если товар не найден или неактивен, возвращает 404.
+
+    """
+    product = await db.get(ProductModel, product_id)
+    if not product or not product.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+    result = await db.scalars(
+        select(ReviewModel).where(ReviewModel.product_id == product_id, ReviewModel.is_active == True))
+    return result.all()

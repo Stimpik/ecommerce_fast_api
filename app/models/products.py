@@ -17,6 +17,6 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-
+    rating: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, server_default="0") # Средний рейтинг
     category: Mapped["Category"] = relationship(back_populates="products")
     seller = relationship("User", back_populates="products")
