@@ -1,5 +1,7 @@
 from decimal import Decimal
-from sqlalchemy import String, Boolean, Integer, Numeric, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import String, Boolean, Integer, Numeric, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -17,6 +19,8 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
     seller_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    rating: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, server_default="0") # Средний рейтинг
+    rating: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, server_default="0")  # Средний рейтинг
     category: Mapped["Category"] = relationship(back_populates="products")
     seller = relationship("User", back_populates="products")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
