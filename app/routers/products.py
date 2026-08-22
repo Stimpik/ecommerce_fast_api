@@ -34,6 +34,8 @@ async def get_all_products(
         page_size: int = Query(20, ge=1, le=100),
         category_id: int | None = Query(
             None, description="ID категории для фильтрации"),
+        search: str | None = Query(
+            None, min_length=1, description="Поиск по названию/описанию"),
         min_price: float | None = Query(
             None, ge=0, description="Минимальная цена товара"),
         max_price: float | None = Query(
@@ -58,7 +60,7 @@ async def get_all_products(
         )
 
     # Формируем список фильтров
-    filters = [ProductModel.is_active == True]
+    filters = [ProductModel.is_active.is_(True)]
 
     if category_id is not None:
         filters.append(ProductModel.category_id == category_id)
@@ -71,25 +73,45 @@ async def get_all_products(
     if seller_id is not None:
         filters.append(ProductModel.seller_id == seller_id)
 
-    # Подсчёт общего количества с учётом фильтров
+    rank_col = None
+    if search:
+        search_value = search.strip()
+        if search_value:
+            ts_query = func.websearch_to_tsquery("english", search_value)
+            filters.append(ProductModel.tsv.op("@@")(ts_query))
+            rank_col = func.ts_rank_cd(ProductModel.tsv, ts_query).label("rank")
+
+    # Подсчёт общего количества с учётом всех фильтров, включая полнотекстовый поиск
     total_stmt = select(func.count()).select_from(ProductModel).where(*filters)
     total = await db.scalar(total_stmt) or 0
 
-    # Выборка товаров с фильтрами и пагинацией
+    # При поиске ранг имеет наивысший приоритет, выбранная сортировка сохраняется
+    # как дополнительный порядок для результатов с одинаковой релевантностью.
+    products_stmt = select(ProductModel, rank_col) if rank_col is not None else select(ProductModel)
+    products_stmt = products_stmt.where(*filters)
+
+    order_by = []
+    if rank_col is not None:
+        order_by.append(rank_col.desc())
+    if sort_created_at == 'asc':
+        order_by.extend((ProductModel.created_at.asc(), ProductModel.id.asc()))
+    elif sort_created_at == 'desc':
+        order_by.extend((ProductModel.created_at.desc(), ProductModel.id.desc()))
+    else:
+        order_by.append(ProductModel.id)
+
     products_stmt = (
-        select(ProductModel)
-        .where(*filters)
+        products_stmt
+        .order_by(*order_by)
         .offset((page - 1) * page_size)
         .limit(page_size)
     )
-    if sort_created_at == 'asc':
-        products_stmt = products_stmt.order_by(ProductModel.created_at.asc(), ProductModel.id.asc())
-    elif sort_created_at == 'desc':
-        products_stmt = products_stmt.order_by(ProductModel.created_at.desc(), ProductModel.id.desc())
-    else:
-        products_stmt = products_stmt.order_by(ProductModel.id)
 
-    items = (await db.scalars(products_stmt)).all()
+    if rank_col is not None:
+        rows = (await db.execute(products_stmt)).all()
+        items = [row[0] for row in rows]
+    else:
+        items = (await db.scalars(products_stmt)).all()
 
     return {
         "items": items,

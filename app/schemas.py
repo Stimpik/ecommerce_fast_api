@@ -104,3 +104,20 @@ class ProductList(BaseModel):
     page_size: int = Field(ge=1, description="Количество элементов на странице")
 
     model_config = ConfigDict(from_attributes=True)  # Для чтения из ORM-объектов
+
+
+class Order(BaseModel):
+    id: int
+    user_id: int
+    total_price: float
+    status: str
+    is_active: bool = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrderList(BaseModel):
+    items: list[Order]
+    total: int
+    page: int = Field(ge=1)
+    page_size: int = Field(ge=1, le=100, default=20)
