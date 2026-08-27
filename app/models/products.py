@@ -38,7 +38,8 @@ class Product(Base):
     seller = relationship("User", back_populates="products")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
-
+    cart_items: Mapped[list["CartItem"]] = relationship("CartItem", back_populates="product",
+                                                        cascade="all, delete-orphan")
     __table_args__ = (
         Index("ix_products_tsv_gin", "tsv", postgresql_using="gin"),
     )
