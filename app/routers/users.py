@@ -10,7 +10,6 @@ from app.auth import hash_password, verify_password, create_access_token, create
 from app.config import SECRET_KEY, ALGORITHM
 from app.schemas import UserCreate, User as UserSchema, RefreshTokenRequest
 
-
 router = APIRouter(prefix="/users", tags=["users"])
 
 
@@ -38,7 +37,7 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)
     return db_user
 
 
-@router.post("/token")                                                                # New
+@router.post("/token")  # New
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_async_db)):
     """
     Аутентифицирует пользователя и возвращает access_token и refresh_token.
@@ -57,11 +56,10 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-
 @router.post("/refresh-token")
 async def refresh_token(
-    body: RefreshTokenRequest,
-    db: AsyncSession = Depends(get_async_db),
+        body: RefreshTokenRequest,
+        db: AsyncSession = Depends(get_async_db),
 ):
     """
     Обновляет refresh-токен, принимая старый refresh-токен в теле запроса.
@@ -110,3 +108,9 @@ async def refresh_token(
         "refresh_token": new_refresh_token,
         "token_type": "bearer",
     }
+
+
+@router.get("/",response_model=list[UserSchema])
+async def get_users(db: AsyncSession = Depends(get_async_db)):
+    users = await db.scalars(select(UserModel).order_by(UserModel.id))
+    return users.all()
